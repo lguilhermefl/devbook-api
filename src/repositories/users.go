@@ -97,7 +97,7 @@ func (repository Users) FindUserById(userID uint64) (models.User, error) {
 	return user, nil
 }
 
-func (repository Users) UpdateUserById(userID uint64, user models.User) error {
+func (repository Users) UpdateUser(userID uint64, user models.User) error {
 	statement, err := repository.db.Prepare(
 		"update users set name = ?, nick = ?, email = ? where id = ?",
 	)
@@ -107,6 +107,22 @@ func (repository Users) UpdateUserById(userID uint64, user models.User) error {
 	defer statement.Close()
 
 	if _, err = statement.Exec(user.Name, user.Nick, user.Email, userID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (repository Users) DeleteUser(userID uint64) error {
+	statement, err := repository.db.Prepare(
+		"delete from users where id = ?",
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(userID); err != nil {
 		return err
 	}
 

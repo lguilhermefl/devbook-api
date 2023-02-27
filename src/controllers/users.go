@@ -99,7 +99,7 @@ func GetUserById(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateUser update user info
-func UpdateUserById(w http.ResponseWriter, r *http.Request) {
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	userID, err := strconv.ParseUint(params["userId"], 10, 64)
 	if err != nil {
@@ -132,7 +132,7 @@ func UpdateUserById(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	repository := repositories.NewUsersRepository(db)
-	if err = repository.UpdateUserById(userID, user); err != nil {
+	if err = repository.UpdateUser(userID, user); err != nil {
 		responses.Error(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -142,5 +142,25 @@ func UpdateUserById(w http.ResponseWriter, r *http.Request) {
 
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Delete User!"))
+	params := mux.Vars(r)
+	userID, err := strconv.ParseUint(params["userId"], 10, 64)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connect()
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	if err = repository.DeleteUser(userID); err != nil {
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
 }
