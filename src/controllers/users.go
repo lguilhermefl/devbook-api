@@ -14,19 +14,24 @@ import (
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body) 
 	if err != nil {
-		responses.Err(w, http.StatusUnprocessableEntity, err)
+		responses.Error(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var user models.User
 	if err = json.Unmarshal(body, &user); err != nil {
-		responses.Err(w, http.StatusBadRequest, err)
+		responses.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	if err = user.Prepare(); err != nil {
+		responses.Error(w, http.StatusBadRequest, err)
 		return
 	}
 
 	db, err := db.Connect()
 	if err != nil {
-		responses.Err(w, http.StatusInternalServerError, err)
+		responses.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 	defer db.Close()
@@ -34,7 +39,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	repository := repositories.NewUsersRepository(db)
 	user.ID, err = repository.Create(user)
 	if err != nil {
-		responses.Err(w, http.StatusInternalServerError, err)
+		responses.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 

@@ -14,10 +14,10 @@ func JSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	}
 }
 
-func Err(w http.ResponseWriter, statusCode int, err error) {
+func Error(w http.ResponseWriter, statusCode int, err error) {
 	JSON(w, statusCode, struct {
-		Err string `json:"err"`
+		Error string `json:"error"`
 	}{
-		Err: err.Error(),
+		Error: err.Error(),
 	})
 }
