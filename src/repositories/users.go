@@ -10,12 +10,10 @@ type Users struct {
 	db *sql.DB
 }
 
-// NewUserRepository creates a new users repository
 func NewUsersRepository(db *sql.DB) *Users {
 	return &Users{db}
 }
 
-// Create inset user on db
 func (repository Users) Create(user models.User) (uint64, error) {
 	statement, err := repository.db.Prepare(
 		"insert into users (name, nick, email, password) values(?, ?, ?, ?)",
@@ -38,8 +36,7 @@ func (repository Users) Create(user models.User) (uint64, error) {
 	return uint64(lastInsertID), nil
 }
 
-
-func (repository Users) GetUsersByNameOrNick(nameOrNick string) ([]models.User, error) {
+func (repository Users) FindUsersByNameOrNick(nameOrNick string) ([]models.User, error) {
 	nameOrNick = fmt.Sprintf("%%%s%%", nameOrNick) // %nameOrNick%
 
 	lines, err := repository.db.Query(
@@ -71,4 +68,31 @@ func (repository Users) GetUsersByNameOrNick(nameOrNick string) ([]models.User, 
 	}
 
 	return users, nil
+}
+
+func (repository Users) FindUserById(userID uint64) (models.User, error) {
+	lines, err := repository.db.Query(
+		"select id, name, nick, email, createdAt from users where id = ?",
+		userID,
+	)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer lines.Close()
+
+	var user models.User
+
+	if lines.Next() {
+		if err = lines.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Nick,
+			&user.Email,
+			&user.CreatedAt,
+		); err != nil {
+			return models.User{}, err
+		}
+	}
+
+	return user, nil
 }
