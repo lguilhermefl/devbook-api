@@ -28,7 +28,7 @@ func (repository Users) Create(user models.User) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-
+	
 	lastInsertID, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
