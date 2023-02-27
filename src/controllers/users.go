@@ -7,6 +7,7 @@ import (
 	"api/src/repositories"
 	"api/src/responses"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -172,7 +173,6 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	db, err := db.Connect()
 	if err != nil {
 		responses.Error(w, http.StatusInternalServerError, err)
@@ -182,6 +182,41 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	repository := repositories.NewUsersRepository(db)
 	if err = repository.DeleteUser(userID); err != nil {
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusNoContent, nil)
+}
+
+func FollowUser(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userIDToFollow, err := strconv.ParseUint(params["userId"], 10, 64)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userIDToken, err := authentication.ExtractUserID(r)
+	if err != nil {
+		responses.Error(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if userIDToken == userIDToFollow {
+		responses.Error(w, http.StatusForbidden, errors.New("It isn't possible to follow yourself"))
+		return
+	}
+
+	db, err := db.Connect()
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	if err = repository.FollowUser(userIDToken, userIDToFollow); err != nil {
 		responses.Error(w, http.StatusInternalServerError, err)
 		return
 	}
