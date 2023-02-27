@@ -12,6 +12,7 @@ import (
 var (
 	DatabaseUrl = ""
 	Port = 0
+	JWTScecret []byte 
 )
 
 // Load init env variables
@@ -32,4 +33,6 @@ func Load() {
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_NAME"),
 	)
+
+	JWTScecret = []byte(os.Getenv("JWT_SECRET"))
 }
