@@ -96,3 +96,19 @@ func (repository Users) FindUserById(userID uint64) (models.User, error) {
 
 	return user, nil
 }
+
+func (repository Users) UpdateUserById(userID uint64, user models.User) error {
+	statement, err := repository.db.Prepare(
+		"update users set name = ?, nick = ?, email = ? where id = ?",
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(user.Name, user.Nick, user.Email, userID); err != nil {
+		return err
+	}
+
+	return nil
+}
