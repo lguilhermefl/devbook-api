@@ -9,3 +9,9 @@ values
 (1, 2),
 (3, 1),
 (1, 3);
+
+INSERT INTO posts(title, content, author_id)
+values
+("Post user 1", "Este é o post do user 1", 1),
+("Post user 2", "Este é o post do user 2", 2),
+("Post user 3", "Este é o post do user 3", 3);
