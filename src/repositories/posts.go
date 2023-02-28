@@ -136,3 +136,39 @@ func (repository Posts) DeletePost(postID uint64) error {
 
 	return nil
 }
+
+func (repository Posts) FindPostsByUserId(userID uint64) ([]models.Post, error) {
+	lines, err := repository.db.Query(`
+		select p.*, u.nick from posts p
+		inner join users u on u.id = p.author_id
+		where p.author_id = ?
+		order by 1 desc`,
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer lines.Close()
+
+	var posts []models.Post
+
+	for lines.Next() {
+		var post models.Post
+
+		if err = lines.Scan(
+			&post.ID,
+			&post.Title,
+			&post.Content,
+			&post.AuthorID,
+			&post.Likes,
+			&post.CreatedAt,
+			&post.AuthorNick,
+		); err != nil {
+			return nil, err
+		}
+
+		posts = append(posts, post)
+	}
+
+	return posts, nil
+}
