@@ -147,7 +147,7 @@ func (repository Users) FindUserByEmail(email string) (models.User, error) {
 	return user, nil
 }
 
-func (repository Users) FollowUser(userID, userIDToFollow uint64) error {
+func (repository Users) FollowUser(userIDToFollow, userIDFollower uint64) error {
 	statement, err := repository.db.Prepare(
 		"insert ignore into followers (user_id, follower_id) values (?, ?)",
 	)
@@ -156,14 +156,14 @@ func (repository Users) FollowUser(userID, userIDToFollow uint64) error {
 	}
 	defer statement.Close()
 
-	if _, err = statement.Exec(userID, userIDToFollow); err != nil {
+	if _, err = statement.Exec(userIDToFollow, userIDFollower); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (repository Users) UnfollowUser(userID, userIDToUnfollow uint64) error {
+func (repository Users) UnfollowUser(userIDToUnfollow, userIDFollower uint64) error {
 	statement, err := repository.db.Prepare(
 		"delete from followers (user_id, follower_id) values (?, ?)",
 	)
@@ -172,9 +172,42 @@ func (repository Users) UnfollowUser(userID, userIDToUnfollow uint64) error {
 	}
 	defer statement.Close()
 
-	if _, err = statement.Exec(userID, userIDToUnfollow); err != nil {
+	if _, err = statement.Exec(userIDToUnfollow, userIDFollower); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (repository Users) FindUserFollowers(userID uint64) ([]models.User, error) {
+	lines, err := repository.db.Query(`
+		select u.id, u.name, u.nick, u.email, u.createdAt
+		from users u
+		inner join followers f
+		on u.id = f.follower_id
+		where f.user_id = ?
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer lines.Close()
+
+	var users []models.User
+	for lines.Next() {
+		var user models.User
+
+		if err = lines.Scan(
+			&user.ID,
+			&user.Name,
+			&user.Nick,
+			&user.Email,
+			&user.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }

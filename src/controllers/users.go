@@ -197,13 +197,13 @@ func FollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDToken, err := authentication.ExtractUserID(r)
+	userIDFollower, err := authentication.ExtractUserID(r)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	if userIDToken == userIDToFollow {
+	if userIDFollower == userIDToFollow {
 		responses.Error(w, http.StatusForbidden, errors.New("It isn't possible to follow yourself"))
 		return
 	}
@@ -216,7 +216,7 @@ func FollowUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	repository := repositories.NewUsersRepository(db)
-	if err = repository.FollowUser(userIDToken, userIDToFollow); err != nil {
+	if err = repository.FollowUser(userIDToFollow, userIDFollower); err != nil {
 		responses.Error(w, http.StatusInternalServerError, err)
 		return
 	}
@@ -232,13 +232,13 @@ func UnfollowUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDToken, err := authentication.ExtractUserID(r)
+	userIDFollower, err := authentication.ExtractUserID(r)
 	if err != nil {
 		responses.Error(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	if userIDToken == userIDToUnfollow {
+	if userIDFollower == userIDToUnfollow {
 		responses.Error(w, http.StatusForbidden, errors.New("It isn't possible to unfollow yourself"))
 		return
 	}
@@ -251,10 +251,35 @@ func UnfollowUser(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	repository := repositories.NewUsersRepository(db)
-	if err = repository.UnfollowUser(userIDToken, userIDToUnfollow); err != nil {
+	if err = repository.UnfollowUser(userIDToUnfollow, userIDFollower); err != nil {
 		responses.Error(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	responses.JSON(w, http.StatusNoContent, nil)
+}
+
+func GetUserFollowers(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userID, err := strconv.ParseUint(params["userId"], 10, 64)
+	if err != nil {
+		responses.Error(w, http.StatusBadRequest, err)
+		return
+	}
+
+	db, err := db.Connect()
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	repository := repositories.NewUsersRepository(db)
+	followers, err := repository.FindUserFollowers(userID)
+	if err != nil {
+		responses.Error(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responses.JSON(w, http.StatusOK, followers)
 }
