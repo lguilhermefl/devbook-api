@@ -22,7 +22,7 @@ func (repository Posts) CreatePost(post models.Post) (uint64, error) {
 	}
 	defer statement.Close()
 
-	result, err := statement.Exec(&post.Title, &post.Content, &post.AuthorID)
+	result, err := statement.Exec(post.Title, post.Content, post.AuthorID)
 	if err != nil {
 		return 0, err
 	}
@@ -102,4 +102,37 @@ func (repository Posts) FindPostById(postID uint64) (models.Post, error) {
 	}
 
 	return post, nil
+}
+
+func (repository Posts) UpdatePost(postID uint64, post models.Post) error {
+	statement, err := repository.db.Prepare(
+		"update posts set title = ?, content = ? where id = ?",
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(post.Title, post.Content, postID)
+	err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+func (repository Posts) DeletePost(postID uint64) error {
+	statement, err := repository.db.Prepare(
+		"delete from posts where id = ?",
+	)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	if _, err = statement.Exec(postID); err != nil {
+		return err
+	}
+
+	return nil
 }
